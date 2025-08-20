@@ -225,13 +225,14 @@ async def get_fio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user_orders[user_id]['fio'] = fio
     user_orders[user_id]['username'] = update.effective_user.username or "Не указан"
+    user_orders[user_id]['user_id'] = user_id
     
     # Формируем подтверждение
     order = user_orders[user_id]
     confirm_text = "✅ Подтвердите заказ:\n\n"
     confirm_text += f"🏙️ Город: {order['city']}\n"
     confirm_text += f"👤 ФИО: {order['fio']}\n\n"
-    confirm_text += "🛒 Состав заказа:\n"
+    confirm_text += "🛒 Состав за订单:\n"
     
     total = 0
     for item in order['cart']:
@@ -263,9 +264,10 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Формируем сообщение для продавца
     order_text = "🛍️ НОВЫЙ ЗАКАЗ!\n\n"
-    order_text += f"👤 Покупатель: @{order['username']}\n"
-    order_text += f"🏙️ Город: {order['city']}\n"
-    order_text += f"📞 ФИО: {order['fio']}\n\n"
+    order_text += f"👤 Покупатель: {order['fio']}\n"
+    order_text += f"📞 Username: @{order['username']}\n"
+    order_text += f"🆔 ID: {order['user_id']}\n"
+    order_text += f"🏙️ Город: {order['city']}\n\n"
     order_text += "📦 Состав заказа:\n"
     
     total = 0
@@ -273,15 +275,26 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
         order_text += f"• {item['name']} - {item['grams']}г - {item['price']}₽\n"
         total += item['price']
     
-    order_text += f"\n💵 Итого: {total}₽\n"
-    order_text += f"🆔 ID пользователя: {user_id}"
+    order_text += f"\n💵 Итого: {total}₽"
     
-    # Отправляем продавцу (замените на реальный @username)
+    # Отправляем продавцу (используем ID пользователя вместо @username)
     try:
-        await context.bot.send_message(chat_id="@moychai181", text=order_text)
-    except:
-        # Если не получится отправить продавцу, просто логируем
-        print(f"Заказ для @moychai181: {order_text}")
+        # Пытаемся отправить сообщение продавцу (замените на реальный ID чата продавца)
+        # Чтобы получить ID продавца, можно попросить его написать боту @userinfobot
+        seller_chat_id = "ваш_chat_id_продавца"  # Замените на реальный chat_id
+        await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
+        print(f"✅ Уведомление отправлено продавцу: {order_text}")
+    except Exception as e:
+        print(f"❌ Ошибка отправки уведомления продавцу: {e}")
+        # Альтернативный вариант - отправить сообщение через username
+        try:
+            await context.bot.send_message(chat_id="@moychai181", text=order_text)
+            print(f"✅ Уведомление отправлено через @moychai181")
+        except Exception as e2:
+            print(f"❌ Ошибка отправки через @moychai181: {e2}")
+            # Сохраняем заказ в лог как запасной вариант
+            with open("orders.log", "a", encoding="utf-8") as f:
+                f.write(f"\n{order_text}\n{'='*50}\n")
     
     # Очищаем корзину
     if user_id in user_carts:
@@ -290,7 +303,7 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Удаляем временные данные
     del user_orders[user_id]
     
-    await query.edit_message_text("✅ Заказ оформлен! Продавец @moychai181 свяжется с вами для уточнения деталей доставки и оплаты.")
+    await query.edit_message_text("✅ Заказ оформлен! Продавец свяжется с вами для уточнения деталей доставки и оплаты.")
     return ConversationHandler.END
 
 # Отмена заказа
