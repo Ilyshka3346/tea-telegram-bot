@@ -22,7 +22,7 @@ CATALOG = {
         'description': 'Вкус: нежный, густой, освежающий, сладкий. Оттенки липового меда, орехов, дыни и свежих фруктов.',
         'price': 640,
         'weight': '50гр',
-        'price_per_gram': 13,
+        'price_per_gram': 12.8,
         'photo': 'https://imgur.com/aSnZTQx'  # Замените на реальные URL фото
     },
     '2': {
@@ -47,7 +47,7 @@ CATALOG = {
         'price': 1600,
         'weight': '357гр',
         'price_per_gram': 4.5,
-        'photo': 'https://imgur.com/example4.jpg'
+        'photo': 'https://imgur.com/undefined'
     },
     '5': {
         'name': '🍵 Шу Пуэр 2019г. «3 звезды»',
@@ -55,15 +55,15 @@ CATALOG = {
         'price': 1600,
         'weight': '357гр',
         'price_per_gram': 4.5,
-        'photo': 'https://imgur.com/example5.jpg'
+        'photo': 'https://imgur.com/mIthhWy'
     },
     '6': {
         'name': '🍵 Шу Пуэр 2021г. «Бык из Нака»',
         'description': 'Шу Пуэр 2021г. завода «Чашуван» 357гр.',
         'price': 2360,
         'weight': '357гр',
-        'price_per_gram': 7,
-        'photo': 'https://imgur.com/example6.jpg'
+        'price_per_gram': 6.6,
+        'photo': 'https://imgur.com/8lsc4zp'
     },
     '7': {
         'name': '🍵 Шу Пуэр 2017г. «Гунтин»',
@@ -71,7 +71,7 @@ CATALOG = {
         'price': 3140,
         'weight': '357гр',
         'price_per_gram': 8.8,
-        'photo': 'https://imgur.com/example7.jpg'
+        'photo': 'https://imgur.com/AgnAVaM'
     },
     '8': {
         'name': '🍵 Шен Пуэр 2020г. «Гора Бада»',
@@ -79,7 +79,7 @@ CATALOG = {
         'price': 2000,
         'weight': '357гр',
         'price_per_gram': 5.7,
-        'photo': 'https://imgur.com/example8.jpg'
+        'photo': 'https://imgur.com/22P5cKD'
     },
     '9': {
         'name': '🍵 Шен Пуэр 2018г. «Золотая нить»',
@@ -87,7 +87,7 @@ CATALOG = {
         'price': 1000,
         'weight': '100гр',
         'price_per_gram': 10,
-        'photo': 'https://imgur.com/example9.jpg'
+        'photo': 'https://imgur.com/JgLhysy'
     },
     '10': {
         'name': '🍵 Шен Пуэр 2013г. «7543»',
@@ -95,7 +95,7 @@ CATALOG = {
         'price': 3750,
         'weight': '357гр',
         'price_per_gram': 10.6,
-        'photo': 'https://imgur.com/example10.jpg'
+        'photo': 'https://imgur.com/bmy5NBB'
     },
     '11': {
         'name': '🍵 Шу Пуэр 2016г. «Наньно»',
@@ -103,7 +103,7 @@ CATALOG = {
         'price': 2040,
         'weight': '357гр',
         'price_per_gram': 5.7,
-        'photo': 'https://imgur.com/example11.jpg'
+        'photo': 'https://imgur.com/KIzmAb5'
     },
     '12': {
         'name': '🍵 Шу Пуэр 2005г. «Двор чайного короля»',
@@ -111,7 +111,7 @@ CATALOG = {
         'price': 2220,
         'weight': '357гр',
         'price_per_gram': 6.2,
-        'photo': 'https://imgur.com/example12.jpg'
+        'photo': 'https://imgur.com/6OIEJT6'
     },
     '13': {
         'name': '🍵 Шуйсянь (владыка вод)',
@@ -119,7 +119,7 @@ CATALOG = {
         'price': 520,
         'weight': '50гр',
         'price_per_gram': 10.4,
-        'photo': 'https://imgur.com/example13.jpg'
+        'photo': 'https://imgur.com/m8F5AK6'
     }
 }
 
