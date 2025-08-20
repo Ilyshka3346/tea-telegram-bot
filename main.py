@@ -15,98 +15,111 @@ TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 # Состояния для ConversationHandler
 CITY, FIO, CONFIRMATION = range(3)
 
-# Каталог чая
+# Каталог чая с фото
 CATALOG = {
     '1': {
         'name': '🍵 Дафо Лунцзин (колодец дракона)',
         'description': 'Вкус: нежный, густой, освежающий, сладкий. Оттенки липового меда, орехов, дыни и свежих фруктов.',
         'price': 640,
         'weight': '50гр',
-        'price_per_gram': 13
+        'price_per_gram': 13,
+        'photo': 'https://imgur.com/aSnZTQx'  # Замените на реальные URL фото
     },
     '2': {
         'name': '🚩 Да Хун Пао (большой красный халат)',
         'description': 'Вкус: нежный, густой и насыщенный, табачными, карамельными, медовыми нотами и выраженным вкусом семечек.',
         'price': 400,
         'weight': '50гр',
-        'price_per_gram': 8
+        'price_per_gram': 8,
+        'photo': 'https://imgur.com/czS7nph'
     },
     '3': {
         'name': '🍵 Те гуань инь (железная богиня)',
         'description': 'Во вкусе: свежескошенная трава, цветы, цитрусы, мёд с железным послевкусием и легкими ментоловыми нотками',
         'price': 430,
         'weight': '50гр',
-        'price_per_gram': 8.6
+        'price_per_gram': 8.6,
+        'photo': 'https://imgur.com/NZayGfs'
     },
     '4': {
         'name': '🍵 Шу Пуэр 2021г. «Юаньфэй»',
-        'description': 'Шu Пуэр 2021г. завода «Чашуван» 357гр.',
+        'description': 'Шу Пуэр 2021г. завода «Чашуван» 357гр.',
         'price': 1600,
         'weight': '357гр',
-        'price_per_gram': 4.5
+        'price_per_gram': 4.5,
+        'photo': 'https://imgur.com/example4.jpg'
     },
     '5': {
         'name': '🍵 Шу Пуэр 2019г. «3 звезды»',
         'description': 'Шу Пуэр 2019г. завода «Чашуван» 357гр.',
         'price': 1600,
         'weight': '357гр',
-        'price_per_gram': 4.5
+        'price_per_gram': 4.5,
+        'photo': 'https://imgur.com/example5.jpg'
     },
     '6': {
         'name': '🍵 Шу Пуэр 2021г. «Бык из Нака»',
         'description': 'Шу Пуэр 2021г. завода «Чашуван» 357гр.',
         'price': 2360,
         'weight': '357гр',
-        'price_per_gram': 7
+        'price_per_gram': 7,
+        'photo': 'https://imgur.com/example6.jpg'
     },
     '7': {
         'name': '🍵 Шу Пуэр 2017г. «Гунтин»',
         'description': 'Шу Пуэр 2017г. завода «Юньфусян» 357гр. Вкус: древесина, земля с нотками бани, грецкого ореха, сухофруктов и лёгкой сливочностью',
         'price': 3140,
         'weight': '357гр',
-        'price_per_gram': 8.8
+        'price_per_gram': 8.8,
+        'photo': 'https://imgur.com/example7.jpg'
     },
     '8': {
         'name': '🍵 Шен Пуэр 2020г. «Гора Бада»',
         'description': 'Шен Пуэр 2020г. завода «Юньфусян» 357гр.',
         'price': 2000,
         'weight': '357гр',
-        'price_per_gram': 5.7
+        'price_per_gram': 5.7,
+        'photo': 'https://imgur.com/example8.jpg'
     },
     '9': {
         'name': '🍵 Шен Пуэр 2018г. «Золотая нить»',
         'description': 'Шен Пуэр 2018г. завода «Сягуань» гнездо 100гр.',
         'price': 1000,
         'weight': '100гр',
-        'price_per_gram': 10
+        'price_per_gram': 10,
+        'photo': 'https://imgur.com/example9.jpg'
     },
     '10': {
         'name': '🍵 Шен Пуэр 2013г. «7543»',
         'description': 'Шен Пуэр 2013г. завода «Сягуань» 357гр.',
         'price': 3750,
         'weight': '357гр',
-        'price_per_gram': 10.6
+        'price_per_gram': 10.6,
+        'photo': 'https://imgur.com/example10.jpg'
     },
     '11': {
         'name': '🍵 Шу Пуэр 2016г. «Наньно»',
         'description': 'Шу Пуэр 2016г. завода «Чжоуши» 357гр.',
         'price': 2040,
         'weight': '357гр',
-        'price_per_gram': 5.7
+        'price_per_gram': 5.7,
+        'photo': 'https://imgur.com/example11.jpg'
     },
     '12': {
         'name': '🍵 Шу Пуэр 2005г. «Двор чайного короля»',
         'description': 'Шу Пуэр 2005г. завода «Чжоуши» 357гр.',
         'price': 2220,
         'weight': '357гр',
-        'price_per_gram': 6.2
+        'price_per_gram': 6.2,
+        'photo': 'https://imgur.com/example12.jpg'
     },
     '13': {
         'name': '🍵 Шуйсянь (владыка вод)',
         'description': 'Темный улун сильной прожарки. Вкус: легкий с цветочными, табачными, фруктовыми и семечными нотами.',
         'price': 520,
         'weight': '50гр',
-        'price_per_gram': 10.4
+        'price_per_gram': 10.4,
+        'photo': 'https://imgur.com/example13.jpg'
     }
 }
 
@@ -151,6 +164,33 @@ async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🍵 Выберите чай из каталога:", reply_markup=reply_markup)
 
+# Показ информации о чае с фото
+async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id: str):
+    product = CATALOG[product_id]
+    
+    caption = (
+        f"{product['name']}\n\n"
+        f"📝 Описание: {product['description']}\n\n"
+        f"💰 Цена: {product['price']}₽/{product['weight']}\n"
+        f"📊 Цена за 1гр: {product['price_per_gram']}₽\n\n"
+        f"Введите количество грамм:"
+    )
+    
+    # Сохраняем выбранный товар
+    context.user_data['selected_product'] = product_id
+    
+    # Отправляем фото с описанием
+    try:
+        await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=product['photo'],
+            caption=caption
+        )
+    except Exception as e:
+        # Если фото не загружено, отправляем текстовое сообщение
+        print(f"Ошибка отправки фото: {e}")
+        await update.message.reply_text(caption)
+
 # Показ корзины
 async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -177,7 +217,7 @@ async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton(f"🗑️ Удалить {i+1}", callback_data=f"remove_{i}")])
     
     keyboard.extend([
-        [InlineKeyboardButton("🗑️ Очистить всю корзину", callback_data="clear_cart")],
+        [InlineKeyboardButton("🗑️ Очистить всю корзина", callback_data="clear_cart")],
         [InlineKeyboardButton("✅ Оформить заказ", callback_data="checkout")],
         [InlineKeyboardButton("↩️ Назад", callback_data="back_main")]
     ])
@@ -232,7 +272,7 @@ async def get_fio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     confirm_text = "✅ Подтвердите заказ:\n\n"
     confirm_text += f"🏙️ Город: {order['city']}\n"
     confirm_text += f"👤 ФИО: {order['fio']}\n\n"
-    confirm_text += "🛒 Состав за订单:\n"
+    confirm_text += "🛒 Состав заказа:\n"
     
     total = 0
     for item in order['cart']:
@@ -277,22 +317,20 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     order_text += f"\n💵 Итого: {total}₽"
     
-    # Отправляем продавцу (используем ID пользователя вместо @username)
+    # Отправляем продавцу
     try:
-        # Пытаемся отправить сообщение продавцу (замените на реальный ID чата продавца)
-        # Чтобы получить ID продавца, можно попросить его написать боту @userinfobot
         seller_chat_id = "1868127211"  # Замените на реальный chat_id
         await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
         print(f"✅ Уведомление отправлено продавцу: {order_text}")
     except Exception as e:
         print(f"❌ Ошибка отправки уведомления продавцу: {e}")
-        # Альтернативный вариант - отправить сообщение через username
+        # Альтернативный вариант
         try:
             await context.bot.send_message(chat_id="@moychai181", text=order_text)
             print(f"✅ Уведомление отправлено через @moychai181")
         except Exception as e2:
             print(f"❌ Ошибка отправки через @moychai181: {e2}")
-            # Сохраняем заказ в лог как запасной вариант
+            # Сохраняем заказ в лог
             with open("orders.log", "a", encoding="utf-8") as f:
                 f.write(f"\n{order_text}\n{'='*50}\n")
     
@@ -373,18 +411,10 @@ async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     elif data.startswith("view_"):
         product_id = data.split("_")[1]
-        product = CATALOG[product_id]
-        info_text = (
-            f"{product['name']}\n\n"
-            f"📝 Описание: {product['description']}\n\n"
-            f"💰 Цена: {product['price']}₽/{product['weight']}\n"
-            f"📊 Цена за 1гр: {product['price_per_gram']}₽\n\n"
-            f"Введите количество грамм:"
-        )
-        # Сохраняем выбранный товар
-        context.user_data['selected_product'] = product_id
-        # Редактируем существующее сообщение
-        await query.edit_message_text(info_text)
+        # Удаляем сообщение с кнопками каталога
+        await query.delete_message()
+        # Показываем информацию о чае с фото
+        await show_tea_info(update, context, product_id)
     
     elif data.startswith("remove_"):
         index = int(data.split("_")[1])
