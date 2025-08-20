@@ -1,7 +1,7 @@
 import logging
 import os
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters, ConversationHandler
 
 # Включаем логирование
 logging.basicConfig(
@@ -12,7 +12,10 @@ logging.basicConfig(
 # Токен бота
 TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 
-# Каталог чая (данные из вашего сообщения)
+# Состояния для ConversationHandler
+CITY, FIO, CONFIRMATION = range(3)
+
+# Каталог чая
 CATALOG = {
     '1': {
         'name': '🍵 Дафо Лунцзин (колодец дракона)',
@@ -107,8 +110,10 @@ CATALOG = {
     }
 }
 
-# Корзина в памяти (словарь, где ключ - user_id, значение - список товаров)
+# Корзина в памяти
 user_carts = {}
+# Временные данные для заказов
+user_orders = {}
 
 # Главное меню
 main_menu_keyboard = [
@@ -127,85 +132,233 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Показ каталога
 async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Создаем кнопки для каждого чая
     keyboard = []
     row = []
     
     for i, (product_id, product) in enumerate(CATALOG.items(), 1):
-        # Создаем кнопку с названием чая
         button = InlineKeyboardButton(product['name'][:20] + "...", callback_data=f"view_{product_id}")
         row.append(button)
         
-        # Размещаем по 2 кнопки в ряду
         if i % 2 == 0:
             keyboard.append(row)
             row = []
     
-    # Добавляем последний ряд, если он не пустой
     if row:
         keyboard.append(row)
     
-    # Кнопка назад
     keyboard.append([InlineKeyboardButton("↩️ Назад", callback_data="back_main")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🍵 Выберите чай из каталога:", reply_markup=reply_markup)
 
-# Показ информации о чае
+# Показ информации о чае с запросом количества
 async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id: str):
     product = CATALOG[product_id]
     
-    # Формируем текст с информацией
     info_text = (
         f"{product['name']}\n\n"
         f"📝 Описание: {product['description']}\n\n"
         f"💰 Цена: {product['price']}₽/{product['weight']}\n"
         f"📊 Цена за 1гр: {product['price_per_gram']}₽\n\n"
-        f"Выберите действие:"
+        f"Введите количество грамм:"
     )
     
-    # Кнопки для добавления в корзину и возврата
-    keyboard = [
-        [InlineKeyboardButton("➕ Добавить в корзину", callback_data=f"add_{product_id}")],
-        [InlineKeyboardButton("↩️ Назад в каталог", callback_data="back_catalog")]
-    ]
+    # Сохраняем выбранный товар для добавления в корзину
+    context.user_data['selected_product'] = product_id
     
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(info_text, reply_markup=reply_markup)
+    await update.message.reply_text(info_text)
+
+# Добавление в корзину с указанным количеством грамм
+async def add_to_cart_with_grams(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    grams_text = update.message.text
+    
+    try:
+        grams = int(grams_text)
+        if grams <= 0:
+            await update.message.reply_text("❌ Пожалуйста, введите положительное число грамм:")
+            return
+            
+        product_id = context.user_data.get('selected_product')
+        if not product_id:
+            await update.message.reply_text("❌ Ошибка: товар не выбран")
+            return
+            
+        product = CATALOG[product_id]
+        
+        # Рассчитываем цену за указанное количество грамм
+        price_for_grams = round(product['price_per_gram'] * grams)
+        
+        # Инициализируем корзину
+        if user_id not in user_carts:
+            user_carts[user_id] = []
+        
+        # Добавляем товар в корзину
+        user_carts[user_id].append({
+            'product_id': product_id,
+            'grams': grams,
+            'price': price_for_grams,
+            'name': product['name']
+        })
+        
+        await update.message.reply_text(f"✅ Добавлено в корзину: {product['name']} ({grams}г)")
+        
+    except ValueError:
+        await update.message.reply_text("❌ Пожалуйста, введите число грамм:")
 
 # Показ корзины
 async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    
-    # Получаем корзину пользователя или создаем пустую
     cart = user_carts.get(user_id, [])
     
     if not cart:
         await update.message.reply_text("🛒 Ваша корзина пуста")
         return
     
-    # Формируем текст корзины
     cart_text = "🛒 Ваша корзина:\n\n"
     total = 0
     
-    for item in cart:
+    for i, item in enumerate(cart):
         product = CATALOG[item['product_id']]
-        item_total = product['price']
-        total += item_total
-        cart_text += f"• {product['name']}\n"
-        cart_text += f"  {product['weight']} - {product['price']}₽\n\n"
+        cart_text += f"{i+1}. {item['name']}\n"
+        cart_text += f"   {item['grams']}г - {item['price']}₽\n\n"
+        total += item['price']
     
     cart_text += f"💵 Общая сумма: {total}₽"
     
-    # Кнопки для корзины
-    keyboard = [
+    # Кнопки для управления корзиной
+    keyboard = []
+    for i in range(len(cart)):
+        keyboard.append([InlineKeyboardButton(f"🗑️ Удалить {i+1}", callback_data=f"remove_{i}")])
+    
+    keyboard.extend([
+        [InlineKeyboardButton("🗑️ Очистить всю корзину", callback_data="clear_cart")],
         [InlineKeyboardButton("✅ Оформить заказ", callback_data="checkout")],
-        [InlineKeyboardButton("🗑️ Очистить корзину", callback_data="clear_cart")],
         [InlineKeyboardButton("↩️ Назад", callback_data="back_main")]
-    ]
+    ])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(cart_text, reply_markup=reply_markup)
+
+# Начало оформления заказа
+async def start_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    if user_id not in user_carts or not user_carts[user_id]:
+        await query.edit_message_text("❌ Корзина пуста")
+        return
+    
+    # Сохраняем данные заказа
+    user_orders[user_id] = {'cart': user_carts[user_id].copy()}
+    
+    await query.edit_message_text("🏙️ Введите город доставки:")
+    return CITY
+
+# Обработка города
+async def get_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    city = update.message.text
+    
+    if user_id not in user_orders:
+        await update.message.reply_text("❌ Ошибка заказа. Начните заново.")
+        return ConversationHandler.END
+    
+    user_orders[user_id]['city'] = city
+    await update.message.reply_text("👤 Введите ваше ФИО:")
+    return FIO
+
+# Обработка ФИО
+async def get_fio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    fio = update.message.text
+    
+    if user_id not in user_orders:
+        await update.message.reply_text("❌ Ошибка заказа. Начните заново.")
+        return ConversationHandler.END
+    
+    user_orders[user_id]['fio'] = fio
+    user_orders[user_id]['username'] = update.effective_user.username or "Не указан"
+    
+    # Формируем подтверждение
+    order = user_orders[user_id]
+    confirm_text = "✅ Подтвердите заказ:\n\n"
+    confirm_text += f"🏙️ Город: {order['city']}\n"
+    confirm_text += f"👤 ФИО: {order['fio']}\n\n"
+    confirm_text += "🛒 Состав заказа:\n"
+    
+    total = 0
+    for item in order['cart']:
+        confirm_text += f"• {item['name']} - {item['grams']}г - {item['price']}₽\n"
+        total += item['price']
+    
+    confirm_text += f"\n💵 Итого: {total}₽\n\n"
+    confirm_text += "Подтверждаете заказ?"
+    
+    keyboard = [
+        [InlineKeyboardButton("✅ Да", callback_data="confirm_order")],
+        [InlineKeyboardButton("❌ Нет", callback_data="cancel_order")]
+    ]
+    
+    await update.message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard))
+    return CONFIRMATION
+
+# Подтверждение заказа
+async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    if user_id not in user_orders:
+        await query.edit_message_text("❌ Ошибка заказа.")
+        return ConversationHandler.END
+    
+    order = user_orders[user_id]
+    
+    # Формируем сообщение для продавца
+    order_text = "🛍️ НОВЫЙ ЗАКАЗ!\n\n"
+    order_text += f"👤 Покупатель: @{order['username']}\n"
+    order_text += f"🏙️ Город: {order['city']}\n"
+    order_text += f"📞 ФИО: {order['fio']}\n\n"
+    order_text += "📦 Состав заказа:\n"
+    
+    total = 0
+    for item in order['cart']:
+        order_text += f"• {item['name']} - {item['grams']}г - {item['price']}₽\n"
+        total += item['price']
+    
+    order_text += f"\n💵 Итого: {total}₽\n"
+    order_text += f"🆔 ID пользователя: {user_id}"
+    
+    # Отправляем продавцу (замените на реальный @username)
+    try:
+        await context.bot.send_message(chat_id="@moychai181", text=order_text)
+    except:
+        # Если не получится отправить продавцу, просто логируем
+        print(f"Заказ для @moychai181: {order_text}")
+    
+    # Очищаем корзину
+    if user_id in user_carts:
+        user_carts[user_id] = []
+    
+    # Удаляем временные данные
+    del user_orders[user_id]
+    
+    await query.edit_message_text("✅ Заказ оформлен! Продавец @moychai181 свяжется с вами для уточнения деталей доставки и оплаты.")
+    return ConversationHandler.END
+
+# Отмена заказа
+async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    if user_id in user_orders:
+        del user_orders[user_id]
+    
+    await query.edit_message_text("❌ Заказ отменен.")
+    return ConversationHandler.END
 
 # Обработка нажатий на кнопки
 async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -216,47 +369,38 @@ async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE
     user_id = query.from_user.id
     
     if data == "back_main":
-        # Возврат в главное меню
         await query.edit_message_text("Главное меню:")
         await query.message.reply_text("Выберите раздел:", reply_markup=reply_markup)
     
-    elif data == "back_catalog":
-        # Возврат в каталог
-        await show_catalog(update, context)
-    
     elif data.startswith("view_"):
-        # Просмотр информации о чае
         product_id = data.split("_")[1]
-        await query.edit_message_text("Информация о чае:")
+        await query.delete_message()
         await show_tea_info(update, context, product_id)
     
-    elif data.startswith("add_"):
-        # Добавление в корзину
-        product_id = data.split("_")[1]
-        
-        # Инициализируем корзину, если ее нет
-        if user_id not in user_carts:
-            user_carts[user_id] = []
-        
-        # Добавляем товар в корзину
-        user_carts[user_id].append({
-            'product_id': product_id,
-            'added_at': 'now'  # Можно добавить временную метку
-        })
-        
-        await query.answer("✅ Чай добавлен в корзину!")
+    elif data.startswith("remove_"):
+        index = int(data.split("_")[1])
+        if user_id in user_carts and 0 <= index < len(user_carts[user_id]):
+            removed_item = user_carts[user_id].pop(index)
+            await query.answer(f"🗑️ Удалено: {removed_item['name']}")
+            await show_cart(update, context)
+        else:
+            await query.answer("❌ Ошибка удаления")
     
     elif data == "clear_cart":
-        # Очистка корзины
         if user_id in user_carts:
             user_carts[user_id] = []
         await query.edit_message_text("🗑️ Корзина очищена")
     
     elif data == "checkout":
-        # Оформление заказа
-        await query.edit_message_text("Для оформления заказа свяжитесь с @moychai181")
+        await start_checkout(update, context)
+    
+    elif data == "confirm_order":
+        await confirm_order(update, context)
+    
+    elif data == "cancel_order":
+        await cancel_order(update, context)
 
-# Обработка текстовых сообщений (главное меню)
+# Обработка текстовых сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
@@ -269,13 +413,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == '👨‍💼 Связаться с нами':
         await update.message.reply_text("По всем вопросам обращайтесь к @moychai181")
     else:
-        await update.message.reply_text("Пожалуйста, выберите раздел из меню ниже:", reply_markup=reply_markup)
+        # Проверяем, ожидаем ли мы ввод грамм
+        if 'selected_product' in context.user_data:
+            await add_to_cart_with_grams(update, context)
+        else:
+            await update.message.reply_text("Пожалуйста, выберите раздел из меню ниже:", reply_markup=reply_markup)
 
 def main():
     application = Application.builder().token(TOKEN).build()
     
+    # ConversationHandler для оформления заказа
+    conv_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(start_checkout, pattern='^checkout$')],
+        states={
+            CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
+            FIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_fio)],
+            CONFIRMATION: [CallbackQueryHandler(confirm_order, pattern='^confirm_order$'),
+                          CallbackQueryHandler(cancel_order, pattern='^cancel_order$')]
+        },
+        fallbacks=[]
+    )
+    
     # Добавляем обработчики
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_button_click))
     
