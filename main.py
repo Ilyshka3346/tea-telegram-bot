@@ -40,7 +40,7 @@ CATALOG = {
     },
     '4': {
         'name': '🍵 Шу Пуэр 2021г. «Юаньфэй»',
-        'description': 'Шу Пуэр 2021г. завода «Чашуван» 357гр.',
+        'description': 'Шu Пуэр 2021г. завода «Чашуван» 357гр.',
         'price': 1600,
         'weight': '357гр',
         'price_per_gram': 4.5
@@ -150,61 +150,6 @@ async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🍵 Выберите чай из каталога:", reply_markup=reply_markup)
-
-# Показ информации о чае с запросом количества
-async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id: str):
-    product = CATALOG[product_id]
-    
-    info_text = (
-        f"{product['name']}\n\n"
-        f"📝 Описание: {product['description']}\n\n"
-        f"💰 Цена: {product['price']}₽/{product['weight']}\n"
-        f"📊 Цена за 1гр: {product['price_per_gram']}₽\n\n"
-        f"Введите количество грамм:"
-    )
-    
-    # Сохраняем выбранный товар для добавления в корзину
-    context.user_data['selected_product'] = product_id
-    
-    await update.message.reply_text(info_text)
-
-# Добавление в корзину с указанным количеством грамм
-async def add_to_cart_with_grams(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    grams_text = update.message.text
-    
-    try:
-        grams = int(grams_text)
-        if grams <= 0:
-            await update.message.reply_text("❌ Пожалуйста, введите положительное число грамм:")
-            return
-            
-        product_id = context.user_data.get('selected_product')
-        if not product_id:
-            await update.message.reply_text("❌ Ошибка: товар не выбран")
-            return
-            
-        product = CATALOG[product_id]
-        
-        # Рассчитываем цену за указанное количество грамм
-        price_for_grams = round(product['price_per_gram'] * grams)
-        
-        # Инициализируем корзину
-        if user_id not in user_carts:
-            user_carts[user_id] = []
-        
-        # Добавляем товар в корзину
-        user_carts[user_id].append({
-            'product_id': product_id,
-            'grams': grams,
-            'price': price_for_grams,
-            'name': product['name']
-        })
-        
-        await update.message.reply_text(f"✅ Добавлено в корзину: {product['name']} ({grams}г)")
-        
-    except ValueError:
-        await update.message.reply_text("❌ Пожалуйста, введите число грамм:")
 
 # Показ корзины
 async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -360,6 +305,47 @@ async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text("❌ Заказ отменен.")
     return ConversationHandler.END
 
+# Добавление в корзину с указанным количеством грамм
+async def add_to_cart_with_grams(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    grams_text = update.message.text
+    
+    try:
+        grams = int(grams_text)
+        if grams <= 0:
+            await update.message.reply_text("❌ Пожалуйста, введите положительное число грамм:")
+            return
+            
+        product_id = context.user_data.get('selected_product')
+        if not product_id:
+            await update.message.reply_text("❌ Ошибка: товар не выбран")
+            return
+            
+        product = CATALOG[product_id]
+        
+        # Рассчитываем цену за указанное количество грамм
+        price_for_grams = round(product['price_per_gram'] * grams)
+        
+        # Инициализируем корзину
+        if user_id not in user_carts:
+            user_carts[user_id] = []
+        
+        # Добавляем товар в корзину
+        user_carts[user_id].append({
+            'product_id': product_id,
+            'grams': grams,
+            'price': price_for_grams,
+            'name': product['name']
+        })
+        
+        # Очищаем выбранный товар
+        context.user_data.pop('selected_product', None)
+        
+        await update.message.reply_text(f"✅ Добавлено в корзину: {product['name']} ({grams}г)")
+        
+    except ValueError:
+        await update.message.reply_text("❌ Пожалуйста, введите число грамм:")
+
 # Обработка нажатий на кнопки
 async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -374,8 +360,18 @@ async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     elif data.startswith("view_"):
         product_id = data.split("_")[1]
-        await query.delete_message()
-        await show_tea_info(update, context, product_id)
+        product = CATALOG[product_id]
+        info_text = (
+            f"{product['name']}\n\n"
+            f"📝 Описание: {product['description']}\n\n"
+            f"💰 Цена: {product['price']}₽/{product['weight']}\n"
+            f"📊 Цена за 1гр: {product['price_per_gram']}₽\n\n"
+            f"Введите количество грамм:"
+        )
+        # Сохраняем выбранный товар
+        context.user_data['selected_product'] = product_id
+        # Редактируем существующее сообщение
+        await query.edit_message_text(info_text)
     
     elif data.startswith("remove_"):
         index = int(data.split("_")[1])
