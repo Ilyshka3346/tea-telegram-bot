@@ -356,7 +356,7 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Отправляем продавцу
     try:
-        seller_chat_id = "ваш_chat_id_продавца"  # Замените на реальный chat_id
+        seller_chat_id = "1868127211"  # Замените на реальный chat_id
         await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
         print(f"✅ Уведомление отправлено продавцу: {order_text}")
     except Exception as e:
