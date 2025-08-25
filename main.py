@@ -47,7 +47,7 @@ CATALOG = {
         'price': 1500,
         'weight': '357гр',
         'price_per_gram': 4.2,
-        'photo': ''
+        'photo': 'https://imgur.com/UtDepZh'
     },
     '5': {
         'name': '🍵 Шу Пуэр 2019г. «3 звезды»',
