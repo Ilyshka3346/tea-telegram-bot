@@ -13,7 +13,7 @@ logging.basicConfig(
 TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 
 # Состояния для ConversationHandler
-CITY, FIO, CONFIRMATION = range(3)
+CITY, FIO, PHONE, CONFIRMATION = range(4)
 
 # Каталог чая с фото
 CATALOG = {
@@ -23,7 +23,7 @@ CATALOG = {
         'price': 640,
         'weight': '50гр',
         'price_per_gram': 12.8,
-        'photo': 'https://imgur.com/aSnZTQx'  # Замените на реальные URL фото
+        'photo': 'https://imgur.com/aSnZTQx'
     },
     '2': {
         'name': '🚩 Да Хун Пао (большой красный халат)',
@@ -122,7 +122,7 @@ CATALOG = {
         'photo': 'https://imgur.com/m8F5AK6'
     },
     '14': {
-        'name': '🍵Шоу мэй (брови старца)',
+        'name': '🍵 Шоу мэй (брови старца)',
         'description': 'Белый чай Шоумэй очаровывает нежным ароматом сушеных злаков, шиповника и полевых цветов. Промытый лист дарит бархатистый, кисло-сладкий шлейф, напоминающий осеннюю листву и ароматные травы. Вкус чая плотный и гармоничный, сочетающий ноты трав, спелых фруктов и розовых лепестков. С каждым проливом, начиная с четвертого, вкус становится насыщеннее, раскрываясь оттенками вяленого изюма, кураги и освежающего компота из сухофруктов.',
         'price': 310,
         'weight': '50гр',
@@ -130,6 +130,8 @@ CATALOG = {
         'photo': 'https://imgur.com/0JezVc7'
     }
 }
+
+# Корзина в памяти
 user_carts = {}
 # Временные данные для заказов
 user_orders = {}
@@ -223,7 +225,7 @@ async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton(f"🗑️ Удалить {i+1}", callback_data=f"remove_{i}")])
     
     keyboard.extend([
-        [InlineKeyboardButton("🗑️ Очистить всю корзина", callback_data="clear_cart")],
+        [InlineKeyboardButton("🗑️ Очистить всю корзину", callback_data="clear_cart")],
         [InlineKeyboardButton("✅ Оформить заказ", callback_data="checkout")],
         [InlineKeyboardButton("↩️ Назад", callback_data="back_main")]
     ])
@@ -270,6 +272,24 @@ async def get_fio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
     
     user_orders[user_id]['fio'] = fio
+    await update.message.reply_text("📱 Введите ваш номер телефона (например: +79123456789):")
+    return PHONE
+
+# Обработка номера телефона
+async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    phone = update.message.text
+    
+    if user_id not in user_orders:
+        await update.message.reply_text("❌ Ошибка заказа. Начните заново.")
+        return ConversationHandler.END
+    
+    # Простая валидация номера телефона
+    if not any(char.isdigit() for char in phone) or len(phone) < 5:
+        await update.message.reply_text("❌ Пожалуйста, введите корректный номер телефона (например: +79123456789 или 89123456789):")
+        return PHONE
+    
+    user_orders[user_id]['phone'] = phone
     user_orders[user_id]['username'] = update.effective_user.username or "Не указан"
     user_orders[user_id]['user_id'] = user_id
     
@@ -277,7 +297,8 @@ async def get_fio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     order = user_orders[user_id]
     confirm_text = "✅ Подтвердите заказ:\n\n"
     confirm_text += f"🏙️ Город: {order['city']}\n"
-    confirm_text += f"👤 ФИО: {order['fio']}\n\n"
+    confirm_text += f"👤 ФИО: {order['fio']}\n"
+    confirm_text += f"📱 Телефон: {order['phone']}\n\n"
     confirm_text += "🛒 Состав заказа:\n"
     
     total = 0
@@ -311,6 +332,7 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Формируем сообщение для продавца
     order_text = "🛍️ НОВЫЙ ЗАКАЗ!\n\n"
     order_text += f"👤 Покупатель: {order['fio']}\n"
+    order_text += f"📱 Телефон: {order['phone']}\n"
     order_text += f"📞 Username: @{order['username']}\n"
     order_text += f"🆔 ID: {order['user_id']}\n"
     order_text += f"🏙️ Город: {order['city']}\n\n"
@@ -325,7 +347,7 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Отправляем продавцу
     try:
-        seller_chat_id = "1868127211"  # Замените на реальный chat_id
+        seller_chat_id = "ваш_chat_id_продавца"  # Замените на реальный chat_id
         await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
         print(f"✅ Уведомление отправлено продавцу: {order_text}")
     except Exception as e:
@@ -473,6 +495,7 @@ def main():
         states={
             CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
             FIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_fio)],
+            PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
             CONFIRMATION: [CallbackQueryHandler(confirm_order, pattern='^confirm_order$'),
                           CallbackQueryHandler(cancel_order, pattern='^cancel_order$')]
         },
