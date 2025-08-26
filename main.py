@@ -15,7 +15,7 @@ TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 # Состояния для ConversationHandler
 CITY, FIO, PHONE, CONFIRMATION = range(4)
 
-# Каталог чая с фото (обновленные цены и форматирование)
+# Каталог чая с несколькими фото
 CATALOG = {
     '1': {
         'name': '🍵 Дафо Лунцзин (колодец дракона)',
@@ -23,7 +23,10 @@ CATALOG = {
         'price': 640,
         'weight': '50гр',
         'price_per_gram': 12.8,
-        'photo': 'https://imgur.com/aSnZTQx'
+        'photos': [
+            'https://imgur.com/aSnZTQx',
+            
+        ]
     },
     '2': {
         'name': '🚩 Да Хун Пао (большой красный халат)',
@@ -31,7 +34,10 @@ CATALOG = {
         'price': 400,
         'weight': '50гр',
         'price_per_gram': 8,
-        'photo': 'https://imgur.com/czS7nph'
+        'photos': [
+            'https://imgur.com/czS7nph',
+            
+        ]
     },
     '3': {
         'name': '🍵 Те гуань инь (железная богиня)',
@@ -39,7 +45,10 @@ CATALOG = {
         'price': 430,
         'weight': '50гр',
         'price_per_gram': 8.6,
-        'photo': 'https://imgur.com/NZayGfs'
+        'photos': [
+            'https://imgur.com/NZayGfs',
+           
+        ]
     },
     '4': {
         'name': '🍵 Шу Пуэр 2021г. «Юаньфэй»',
@@ -47,7 +56,10 @@ CATALOG = {
         'price': 1500,
         'weight': '357гр',
         'price_per_gram': 4.2,
-        'photo': 'https://imgur.com/UtDepZh'
+        'photos': [
+            'https://imgur.com/g2ezNvO',
+            
+        ]
     },
     '5': {
         'name': '🍵 Шу Пуэр 2019г. «3 звезды»',
@@ -55,7 +67,10 @@ CATALOG = {
         'price': 1400,
         'weight': '357гр',
         'price_per_gram': 3.9,
-        'photo': 'https://imgur.com/a/LtZ4W6w'
+        'photos': [
+            'https://imgur.com/nQiHMv8'
+            'https://imgur.com/zyi7QFV'
+        ]
     },
     '6': {
         'name': '🍵 Шу Пуэр 2021г. «Бык из Нака»',
@@ -63,7 +78,9 @@ CATALOG = {
         'price': 2360,
         'weight': '357гр',
         'price_per_gram': 6.6,
-        'photo': 'https://imgur.com/8lsc4zp'
+        'photos': [
+            'https://imgur.com/8lsc4zp'
+        ]
     },
     '7': {
         'name': '🍵 Шу Пуэр 2017г. «Гунтин»',
@@ -71,7 +88,11 @@ CATALOG = {
         'price': 3140,
         'weight': '357гр',
         'price_per_gram': 8,
-        'photo': 'https://imgur.com/AgnAVaM'
+        'photos': [
+            'https://imgur.com/s3f2S2v',
+            'https://imgur.com/KS0Br9R',
+            'https://imgur.com/LtMeIdU'
+        ]
     },
     '8': {
         'name': '🍵 Шен Пуэр 2020г. «Гора Бада»',
@@ -79,7 +100,9 @@ CATALOG = {
         'price': 2000,
         'weight': '357гр',
         'price_per_gram': 5.7,
-        'photo': 'https://imgur.com/22P5cKD'
+        'photos': [
+            'https://imgur.com/22P5cKD'
+        ]
     },
     '9': {
         'name': '🍵 Шен Пуэр 2018г. «Золотая нить»',
@@ -87,7 +110,9 @@ CATALOG = {
         'price': 1000,
         'weight': '100гр',
         'price_per_gram': 10,
-        'photo': 'https://imgur.com/JgLhysy'
+        'photos': [
+            'https://imgur.com/JgLhysy'
+        ]
     },
     '10': {
         'name': '🍵 Шен Пуэр 2013г. «7543»',
@@ -95,7 +120,9 @@ CATALOG = {
         'price': 3500,
         'weight': '357гр',
         'price_per_gram': 9.8,
-        'photo': 'https://imgur.com/bmy5NBB'
+        'photos': [
+            'https://imgur.com/bmy5NBB'
+        ]
     },
     '11': {
         'name': '🍵 Шу Пуэр 2016г. «Наньно»',
@@ -103,7 +130,9 @@ CATALOG = {
         'price': 1800,
         'weight': '357гр',
         'price_per_gram': 5,
-        'photo': 'https://imgur.com/KIzmAb5'
+        'photos': [
+            'https://imgur.com/KIzmAb5'
+        ]
     },
     '12': {
         'name': '🍵 Шу Пуэр 2005г. «Двор чайного короля»',
@@ -111,7 +140,9 @@ CATALOG = {
         'price': 2220,
         'weight': '357гр',
         'price_per_gram': 5.3,
-        'photo': 'https://imgur.com/6OIEJT6'
+        'photos': [
+            'https://imgur.com/6OIEJT6'
+        ]
     },
     '13': {
         'name': '🍵 Шуйсянь (владыка вод)',
@@ -119,7 +150,9 @@ CATALOG = {
         'price': 520,
         'weight': '50гр',
         'price_per_gram': 10.4,
-        'photo': 'https://imgur.com/m8F5AK6'
+        'photos': [
+            'https://imgur.com/m8F5AK6'
+        ]
     },
     '14': {
         'name': '🍵 Шоу мэй (брови старца)',
@@ -127,7 +160,10 @@ CATALOG = {
         'price': 310,
         'weight': '50гр',
         'price_per_gram': 6.2,
-        'photo': 'https://imgur.com/0JezVc7'
+        'photos': [
+            'https://imgur.com/0JezVc7',
+            ''
+        ]
     }
 }
 
@@ -172,7 +208,7 @@ async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🍵 Выберите чай из каталога:", reply_markup=reply_markup)
 
-# Показ информации о чае с фото
+# Показ информации о чае с несколькими фото
 async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id: str):
     product = CATALOG[product_id]
     
@@ -192,17 +228,35 @@ async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, prod
     # Сохраняем выбранный товар
     context.user_data['selected_product'] = product_id
     
-    # Отправляем фото с описанием (если есть фото)
+    # Отправляем все фото чая
     try:
-        if product['photo'] and product['photo'].startswith('http'):
-            await context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo=product['photo'],
-                caption=caption
-            )
+        photos = product.get('photos', [])
+        
+        if photos:
+            # Отправляем первое фото с описанием
+            first_photo = photos[0]
+            if first_photo.startswith('http'):
+                await context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=first_photo,
+                    caption=caption
+                )
+            else:
+                await update.message.reply_text(caption)
+            
+            # Отправляем остальные фото (без описания)
+            for photo_url in photos[1:]:
+                if photo_url.startswith('http'):
+                    await context.bot.send_photo(
+                        chat_id=update.effective_chat.id,
+                        photo=photo_url
+                    )
+                    # Небольшая задержка между отправкой фото
+                    await asyncio.sleep(0.5)
         else:
             # Если фото нет, отправляем текстовое сообщение
             await update.message.reply_text(caption)
+            
     except Exception as e:
         # Если ошибка при отправке фото, отправляем текстовое сообщение
         print(f"Ошибка отправки фото: {e}")
@@ -356,7 +410,7 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Отправляем продавцу
     try:
-        seller_chat_id = "1868127211"  # Замените на реальный chat_id
+        seller_chat_id = "ваш_chat_id_продавца"  # Замените на реальный chat_id
         await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
         print(f"✅ Уведомление отправлено продавцу: {order_text}")
     except Exception as e:
@@ -484,7 +538,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_catalog(update, context)
     elif text == '🛒 Корзина':
         await show_cart(update, context)
-    elif text == '📢 Наш канал':
+    elif text == '📢 Наш каannel':
         await update.message.reply_text("Подписывайтесь на наш канал: https://t.me/moichai181")
     elif text == '👨‍💼 Связаться с нами':
         await update.message.reply_text("По всем вопросам обращайтесь к @moychai181")
