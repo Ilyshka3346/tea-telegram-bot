@@ -55,7 +55,7 @@ CATALOG = {
         'price': 1400,
         'weight': '357гр',
         'price_per_gram': 3.9,
-        'photo': 'https://imgur.com/mIthhWy'
+        'photo': 'https://imgur.com/a/LtZ4W6w'
     },
     '6': {
         'name': '🍵 Шу Пуэр 2021г. «Бык из Нака»',
