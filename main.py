@@ -1,6 +1,7 @@
 import logging
 import os
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+import json
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters, ConversationHandler
 
 # Включаем логирование
@@ -9,15 +10,24 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# Токен бота
+# Токен основного бота
 TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 
 # Состояния для ConversationHandler
 CITY, FIO, PHONE, CONFIRMATION = range(4)
 
-# Каталог чая с фото (обновленные цены и форматирование)
-CATALOG = {
-    '1': {
+# Файл для хранения каталога
+CATALOG_FILE = 'catalog.json'
+
+# Загрузка каталога из файла
+def load_catalog():
+    try:
+        with open(CATALOG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # Возвращаем базовый каталог если файла нет
+        return {
+            '1': {
         'name': '🍵 Дафо Лунцзин (колодец дракона)',
         'description': 'Нежный, густой, освежающий, сладкий. Оттенки липового меда, орехов, дыни и свежих фруктов.',
         'price': 640,
@@ -131,6 +141,16 @@ CATALOG = {
     }
 }
 
+        
+
+# Сохранение каталога в файл
+def save_catalog(catalog):
+    with open(CATALOG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(catalog, f, ensure_ascii=False, indent=2)
+
+# Загружаем каталог
+CATALOG = load_catalog()
+
 # Корзина в памяти
 user_carts = {}
 # Временные данные для заказов
@@ -153,6 +173,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Показ каталога
 async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Перезагружаем каталог на случай изменений
+    global CATALOG
+    CATALOG = load_catalog()
+    
     keyboard = []
     row = []
     
@@ -356,18 +380,15 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Отправляем продавцу
     try:
-        seller_chat_id = "1868127211"  # Замените на реальный chat_id
+        seller_chat_id = "ваш_chat_id_продавца"
         await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
         print(f"✅ Уведомление отправлено продавцу: {order_text}")
     except Exception as e:
         print(f"❌ Ошибка отправки уведомления продавцу: {e}")
-        # Альтернативный вариант
         try:
             await context.bot.send_message(chat_id="@moychai181", text=order_text)
-            print(f"✅ Уведомление отправлено через @moychai181")
         except Exception as e2:
             print(f"❌ Ошибка отправки через @moychai181: {e2}")
-            # Сохраняем заказ в лог
             with open("orders.log", "a", encoding="utf-8") as f:
                 f.write(f"\n{order_text}\n{'='*50}\n")
     
@@ -448,9 +469,7 @@ async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     elif data.startswith("view_"):
         product_id = data.split("_")[1]
-        # Удаляем сообщение с кнопками каталога
         await query.delete_message()
-        # Показываем информацию о чае с фото
         await show_tea_info(update, context, product_id)
     
     elif data.startswith("remove_"):
@@ -489,7 +508,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == '👨‍💼 Связаться с нами':
         await update.message.reply_text("По всем вопросам обращайтесь к @moychai181")
     else:
-        # Проверяем, ожидаем ли мы ввод грамм
         if 'selected_product' in context.user_data:
             await add_to_cart_with_grams(update, context)
         else:
@@ -498,7 +516,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = Application.builder().token(TOKEN).build()
     
-    # ConversationHandler для оформления заказа
     conv_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(start_checkout, pattern='^checkout$')],
         states={
@@ -511,13 +528,12 @@ def main():
         fallbacks=[]
     )
     
-    # Добавляем обработчики
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_button_click))
     
-    print("Бот запущен и работает...")
+    print("Основной бот запущен и работает...")
     application.run_polling()
 
 if __name__ == '__main__':
