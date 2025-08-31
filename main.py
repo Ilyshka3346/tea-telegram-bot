@@ -1,7 +1,6 @@
 import logging
 import os
-import json
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters, ConversationHandler
 
 # Включаем логирование
@@ -10,24 +9,15 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# Токен основного бота
+# Токен бота
 TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 
 # Состояния для ConversationHandler
 CITY, FIO, PHONE, CONFIRMATION = range(4)
 
-# Файл для хранения каталога
-CATALOG_FILE = 'catalog.json'
-
-# Загрузка каталога из файла
-def load_catalog():
-    try:
-        with open(CATALOG_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Возвращаем базовый каталог если файла нет
-        return {
-            '1': {
+# Каталог чая с фото (обновленные цены и форматирование)
+CATALOG = {
+    '1': {
         'name': '🍵 Дафо Лунцзин (колодец дракона)',
         'description': 'Нежный, густой, освежающий, сладкий. Оттенки липового меда, орехов, дыни и свежих фруктов.',
         'price': 640,
@@ -138,18 +128,36 @@ def load_catalog():
         'weight': '50гр',
         'price_per_gram': 6.2,
         'photo': 'https://imgur.com/0JezVc7'
+    },
+    # Добавляем наборы
+    '15': {
+        'name': '🆕 Набор новичок 📦',
+        'description': 'Белый чай - Шоу Мэй 10гр\nЗеленый чай- Дафо Лунцзин 10гр\nТёмный Улун - Да Хун Пао 10гр\nТёмный Улун - Шуйсянь 10гр\nСветлый Улун - Те Гуань Инь 10гр\nШу Пуэр 2021г «Юаньфэй» 10гр\nШу Пуэр 2019г «3 звезды» 10гр\nШу Пуэр 2021г «бык из Нака меняет мир» 10гр\nШу Пуэр 2016г «Наньно» 10гр\nШу Пуэр 2017г «Гунтин» 10гр\nШу Пуэр 2005г «двор чайного короля» 10гр\nШен Пуэр 2020г «Гора Бада» 10гр\nШен Пуэр 2018г «золотая нить» 10гр\nШен Пуэр 2013г «7543» 10гр',
+        'price': 1000,
+        'weight': 'набор 150гр',
+        'price_per_gram': 6.67,
+        'photo': 'https://imgur.com/uCNbGJt',
+        'is_set': True
+    },
+    '16': {
+        'name': '🥴 Пьяный набор 📦',
+        'description': 'Да Хун Пао 20гр\nШуйсянь 20гр\nТе Гуань Инь 20гр\nШен Пуэр 2020г 20гр\nШен Пуэр 2018г 20гр\nШен Пуэр 2013г 20гр',
+        'price': 1000,
+        'weight': 'набор 120гр',
+        'price_per_gram': 8.33,
+        'photo': 'https://imgur.com/AtSrDi3',
+        'is_set': True
+    },
+    '17': {
+        'name': '🏋️ Бодрый набор 📦',
+        'description': 'Шу Пуэр 2021г «Юаньфэй» 30гр\nШу Пуэр 2019г «3 звезды» 30гр\nШу Пуэр 2021г «бык из Нака меняет мир» 30гр\nШу Пуэр 2017г «Гунтин» 30гр\nДафо Лунцзин 20гр\nШен Пуэр 2020г «Гора Бада» 20гр',
+        'price': 1000,
+        'weight': 'набор 160гр',
+        'price_per_gram': 6.25,
+        'photo': 'https://imgur.com/zjZ0yNa',
+        'is_set': True
     }
 }
-
-        
-
-# Сохранение каталога в файл
-def save_catalog(catalog):
-    with open(CATALOG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(catalog, f, ensure_ascii=False, indent=2)
-
-# Загружаем каталог
-CATALOG = load_catalog()
 
 # Корзина в памяти
 user_carts = {}
@@ -173,10 +181,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Показ каталога
 async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Перезагружаем каталог на случай изменений
-    global CATALOG
-    CATALOG = load_catalog()
-    
     keyboard = []
     row = []
     
@@ -210,8 +214,20 @@ async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, prod
     caption += (
         f"💰 Цена: {product['price']}₽/{product['weight']}\n"
         f"📊 Цена за 1гр: {product['price_per_gram']}₽\n\n"
-        f"Введите количество грамм:"
     )
+    
+    # Для наборов не запрашиваем количество грамм
+    if product.get('is_set'):
+        caption += "✅ Это готовый набор. Добавить в корзину?"
+        keyboard = [
+            [InlineKeyboardButton("✅ Да, добавить набор", callback_data=f"add_set_{product_id}")],
+            [InlineKeyboardButton("↩️ Назад в каталог", callback_data="back_catalog")]
+        ]
+    else:
+        caption += "Введите количество грамм:"
+        keyboard = [
+            [InlineKeyboardButton("↩️ Назад в каталог", callback_data="back_catalog")]
+        ]
     
     # Сохраняем выбранный товар
     context.user_data['selected_product'] = product_id
@@ -222,15 +238,38 @@ async def show_tea_info(update: Update, context: ContextTypes.DEFAULT_TYPE, prod
             await context.bot.send_photo(
                 chat_id=update.effective_chat.id,
                 photo=product['photo'],
-                caption=caption
+                caption=caption,
+                reply_markup=InlineKeyboardMarkup(keyboard)
             )
         else:
             # Если фото нет, отправляем текстовое сообщение
-            await update.message.reply_text(caption)
+            await update.message.reply_text(caption, reply_markup=InlineKeyboardMarkup(keyboard))
     except Exception as e:
         # Если ошибка при отправке фото, отправляем текстовое сообщение
         print(f"Ошибка отправки фото: {e}")
-        await update.message.reply_text(caption)
+        await update.message.reply_text(caption, reply_markup=InlineKeyboardMarkup(keyboard))
+
+# Добавление набора в корзину
+async def add_set_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE, product_id: str):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    product = CATALOG[product_id]
+    
+    # Инициализируем корзину
+    if user_id not in user_carts:
+        user_carts[user_id] = []
+    
+    # Добавляем набор в корзину
+    user_carts[user_id].append({
+        'product_id': product_id,
+        'grams': product['weight'],
+        'price': product['price'],
+        'name': product['name']
+    })
+    
+    await query.edit_message_text(f"✅ Добавлено в корзину: {product['name']}")
 
 # Показ корзины
 async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -245,9 +284,9 @@ async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total = 0
     
     for i, item in enumerate(cart):
-        product = CATALOG[item['product_id']]
+        product = CATALOG.get(item['product_id'], {})
         cart_text += f"{i+1}. {item['name']}\n"
-        cart_text += f"   {item['grams']}г - {item['price']}₽\n\n"
+        cart_text += f"   {item['grams']} - {item['price']}₽\n\n"
         total += item['price']
     
     cart_text += f"💵 Общая сумма: {total}₽"
@@ -336,7 +375,7 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     total = 0
     for item in order['cart']:
-        confirm_text += f"• {item['name']} - {item['grams']}г - {item['price']}₽\n"
+        confirm_text += f"• {item['name']} - {item['grams']} - {item['price']}₽\n"
         total += item['price']
     
     confirm_text += f"\n💵 Итого: {total}₽\n\n"
@@ -373,22 +412,25 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     total = 0
     for item in order['cart']:
-        order_text += f"• {item['name']} - {item['grams']}г - {item['price']}₽\n"
+        order_text += f"• {item['name']} - {item['grams']} - {item['price']}₽\n"
         total += item['price']
     
     order_text += f"\n💵 Итого: {total}₽"
     
     # Отправляем продавцу
     try:
-        seller_chat_id = "1868127211"
+        seller_chat_id = "1868127211"  # Замените на реальный chat_id
         await context.bot.send_message(chat_id=seller_chat_id, text=order_text)
         print(f"✅ Уведомление отправлено продавцу: {order_text}")
     except Exception as e:
         print(f"❌ Ошибка отправки уведомления продавцу: {e}")
+        # Альтернативный вариант
         try:
             await context.bot.send_message(chat_id="@moychai181", text=order_text)
+            print(f"✅ Уведомление отправлено через @moychai181")
         except Exception as e2:
             print(f"❌ Ошибка отправки через @moychai181: {e2}")
+            # Сохраняем заказ в лог
             with open("orders.log", "a", encoding="utf-8") as f:
                 f.write(f"\n{order_text}\n{'='*50}\n")
     
@@ -432,6 +474,11 @@ async def add_to_cart_with_grams(update: Update, context: ContextTypes.DEFAULT_T
             
         product = CATALOG[product_id]
         
+        # Проверяем, не является ли товар набором
+        if product.get('is_set'):
+            await update.message.reply_text("❌ Это готовый набор. Используйте кнопку для добавления.")
+            return
+            
         # Рассчитываем цену за указанное количество грамм
         price_for_grams = round(product['price_per_gram'] * grams)
         
@@ -442,7 +489,7 @@ async def add_to_cart_with_grams(update: Update, context: ContextTypes.DEFAULT_T
         # Добавляем товар в корзину
         user_carts[user_id].append({
             'product_id': product_id,
-            'grams': grams,
+            'grams': f"{grams}г",
             'price': price_for_grams,
             'name': product['name']
         })
@@ -467,10 +514,20 @@ async def handle_button_click(update: Update, context: ContextTypes.DEFAULT_TYPE
         await query.edit_message_text("Главное меню:")
         await query.message.reply_text("Выберите раздел:", reply_markup=reply_markup)
     
+    elif data == "back_catalog":
+        await query.delete_message()
+        await show_catalog(update, context)
+    
     elif data.startswith("view_"):
         product_id = data.split("_")[1]
+        # Удаляем сообщение с кнопками каталога
         await query.delete_message()
+        # Показываем информацию о чае с фото
         await show_tea_info(update, context, product_id)
+    
+    elif data.startswith("add_set_"):
+        product_id = data.split("_")[2]
+        await add_set_to_cart(update, context, product_id)
     
     elif data.startswith("remove_"):
         index = int(data.split("_")[1])
@@ -508,6 +565,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == '👨‍💼 Связаться с нами':
         await update.message.reply_text("По всем вопросам обращайтесь к @moychai181")
     else:
+        # Проверяем, ожидаем ли мы ввод грамм
         if 'selected_product' in context.user_data:
             await add_to_cart_with_grams(update, context)
         else:
@@ -516,6 +574,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = Application.builder().token(TOKEN).build()
     
+    # ConversationHandler для оформления заказа
     conv_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(start_checkout, pattern='^checkout$')],
         states={
@@ -528,12 +587,13 @@ def main():
         fallbacks=[]
     )
     
+    # Добавляем обработчики
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_button_click))
     
-    print("Основной бот запущен и работает...")
+    print("Бот запущен и работает...")
     application.run_polling()
 
 if __name__ == '__main__':
