@@ -2,7 +2,6 @@ import logging
 import os
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters, ConversationHandler
-import json
 
 # Включаем логирование
 logging.basicConfig(
@@ -16,13 +15,8 @@ TOKEN = os.getenv('BOT_TOKEN', '8444368217:AAHrcAVnvgUKyQ9aEoRtgJNZclqhcwMNZXs')
 # Состояния для ConversationHandler
 CITY, FIO, PHONE, CONFIRMATION = range(4)
 
-def load_catalog():
-    try:
-        with open('catalog.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # Возвращаем стандартный каталог если файла нет
-        return {
+# Каталог чая с фото (обновленные цены и форматирование)
+CATALOG = {
     '1': {
         'name': '🍵 Дафо Лунцзин (колодец дракона)',
         'description': 'Нежный, густой, освежающий, сладкий. Оттенки липового меда, орехов, дыни и свежих фруктов.',
@@ -161,8 +155,6 @@ def load_catalog():
         'is_set': True
     }
 }
-    
-CATALOG = load_catalog()
 
 # Корзина в памяти
 user_carts = {}
