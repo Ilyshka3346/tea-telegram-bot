@@ -1,14 +1,14 @@
 import os
 import json
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
-from dotenv import load_dotenv
+from telegram.ext import (
+    Application, CommandHandler, MessageHandler, CallbackQueryHandler, 
+    ContextTypes, filters, ConversationHandler
+)
 
-# Загрузка переменных окружения
-load_dotenv()
-
-ADMIN_BOT_TOKEN = os.getenv('8254583426:AAG--jMQKwkpo-ExLZDcaGiA1NcYiIc0-uY')
-ADMIN_CHAT_ID = int(os.getenv('ADMIN_CHAT_ID', '6236736863'))
+# Вместо dotenv используем os.environ для простоты
+ADMIN_BOT_TOKEN = os.environ.get('ADMIN_BOT_TOKEN', '8254583426:AAG--jMQKwkpo-ExLZDcaGiA1NcYiIc0-uY')
+ADMIN_CHAT_ID = int(os.environ.get('ADMIN_CHAT_ID', '6236736863'))
 
 # Состояния для ConversationHandler
 (
@@ -185,7 +185,7 @@ async def get_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     
     try:
-        if product['photo'] and product['photo'].startswith(('http://', 'https://')):
+        if isinstance(product['photo'], str) and product['photo'].startswith(('http://', 'https://')):
             await update.message.reply_photo(
                 photo=product['photo'],
                 caption=caption,
@@ -217,7 +217,8 @@ async def confirm_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
         catalog = load_catalog()
         
         # Генерируем новый ID
-        new_id = str(max([int(k) for k in catalog.keys()] + [0]) + 1)
+        existing_ids = [int(k) for k in catalog.keys() if k.isdigit()]
+        new_id = str(max(existing_ids + [0]) + 1) if existing_ids else "1"
         
         # Создаем запись товара
         product_data = temp_products[user_id]
@@ -274,7 +275,7 @@ async def view_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if product.get('is_set'):
             catalog_text += f"Цена: {product['price']}₽/{product['weight']}\n"
         else:
-            catalog_text += f"Цена: {product['price']}₽ ({product['price_per_gram']}₽/г)\n"
+            catalog_text += f"Цена: {product['price']}₽ ({product.get('price_per_gram', 'N/A')}₽/г)\n"
         
         catalog_text += "─" * 20 + "\n"
     
@@ -288,6 +289,18 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text("❌ Операция отменена.")
     return ConversationHandler.END
+
+# Обработка текстовых сообщений
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_chat.id):
+        return
+    
+    text = update.message.text
+    
+    if text == '📋 Посмотреть каталог':
+        await view_catalog(update, context)
+    elif text in ['❌ Удалить товар', '🔄 Обновить товар']:
+        await update.message.reply_text("⚠️ Эта функция еще в разработке")
 
 # Основная функция
 def main():
@@ -310,7 +323,7 @@ def main():
     # Добавляем обработчики
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
-    application.add_handler(MessageHandler(filters.Regex('^📋 Посмотреть каталог$'), view_catalog))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("Админ-бот запущен и работает...")
     application.run_polling()
